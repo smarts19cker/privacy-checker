@@ -1,1 +1,25 @@
+# 매월 1일, 법령·지침 개정 여부를 확인하라는 이슈를 자동으로 만듭니다(최신성 유지).
+name: 법령 개정 확인 알림
+on:
+  schedule:
+    - cron: '0 0 1 * *'   # 매월 1일 09:00(한국시간)
+  workflow_dispatch: {}
+permissions:
+  issues: write
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 확인 요청 이슈 만들기
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh issue create --repo "$REPO" \
+            --title "[정기 점검] $(date +%Y-%m) 개인정보 법령·지침 개정 확인" \
+            --body "아래 사이트에서 새 개정 사항이 있는지 확인하고, 있으면 assets/rules.js 를 고쳐 주세요(종합 가이드 8장).
+          - 국가법령정보센터: https://www.law.go.kr/법령/개인정보보호법
+          - 개인정보보호위원회 법령·지침: https://www.pipc.go.kr
+          - KISA 개인정보 자료: https://www.kisa.or.kr
+          - 확인 후 rules.js 의 meta.version / updated / lawEffective 값을 바꾸세요."
 
