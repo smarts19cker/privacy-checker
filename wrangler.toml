@@ -1,0 +1,6 @@
+# Cloudflare 자동 배포 설정(선택). 대시보드에서 등록한 변수·비밀값은 그대로 유지됩니다.
+name = "privacy-agent"
+main = "worker/worker.js"
+compatibility_date = "2025-06-01"
+keep_vars = true
+workers_dev = true

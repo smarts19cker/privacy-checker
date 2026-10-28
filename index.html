@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- [개발보안 입력데이터 검증-4 크로스사이트 스크립트] 콘텐츠 보안 정책(CSP): 외부 스크립트·플러그인·폼 전송 차단 -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
+<meta name="referrer" content="no-referrer">
+<title>개인정보 처리방침 점검 에이전트</title>
+<meta name="description" content="기관명과 개인정보 처리방침 주소만 넣으면 법령·작성지침 기준으로 점검하고, 개선 예시·보고서(PDF)·대시보드·어린이/청소년/어르신용 처리방침을 자동으로 만들어 줍니다.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap top-in">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 2 4 5v6c0 5 3.4 9.6 8 11 4.6-1.4 8-6 8-11V5l-8-3Zm-1.2 14.2-3.5-3.5 1.4-1.4 2.1 2.1 4.9-4.9 1.4 1.4-6.3 6.3Z"/></svg>
+      </span>
+      <div>
+        <h1>개인정보 처리방침 점검 에이전트</h1>
+        <p class="sub">개인정보 보호법 · 작성지침(2026.4.) 기준 자동 점검 · 개선안 · 계층별 처리방침</p>
+      </div>
+    </div>
+    <div class="chips" id="chips"></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- 입력 -->
+  <section class="card" id="inputCard">
+    <h2 class="step"><span>1</span> 점검할 처리방침 입력</h2>
+    <form id="form" autocomplete="off">
+      <div class="grid2">
+        <label>기관명 <b class="req">*</b>
+          <input id="org" required placeholder="예) ○○시청, ○○주식회사">
+        </label>
+        <label>기관 유형
+          <select id="orgType">
+            <option value="private">민간(기업·단체·개인)</option>
+            <option value="public">공공기관</option>
+            <option value="travel">업종: 여행업</option>
+            <option value="senior">업종: 노인복지관</option>
+            <option value="realty">업종: 공인중개사</option>
+          </select>
+        </label>
+      </div>
+      <label>개인정보 처리방침 주소(URL) <b class="req">*</b>
+        <input id="url" type="url" placeholder="https://www.example.go.kr/privacy.do">
+      </label>
+      <details class="adv">
+        <summary>주소로 불러오기가 안 될 때: 내용 직접 붙여넣기 / 파일 올리기</summary>
+        <textarea id="paste" rows="7" placeholder="처리방침 화면에서 전체 선택(Ctrl+A) → 복사(Ctrl+C) → 여기에 붙여넣기(Ctrl+V)"></textarea>
+        <input id="file" type="file" accept=".html,.htm,.txt">
+      </details>
+      <div class="row">
+        <button class="btn primary" id="runBtn" type="submit">점검 시작</button>
+        <button class="btn ghost" id="demoBtn" type="button">예시로 체험하기</button>
+        <span class="hint">개인 이름·전화번호·이메일은 화면과 보고서에서 자동으로 <b>***</b> 처리됩니다.</span>
+      </div>
+      <div class="progress" id="progress" hidden><div class="bar"><i></i></div><span id="progressText">준비 중…</span></div>
+    </form>
+  </section>
+
+  <!-- 결과 -->
+  <section id="result" hidden>
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="dash" class="on">📊 대시보드</button>
+      <button role="tab" data-tab="report">📄 점검 보고서</button>
+      <button role="tab" data-tab="improved">✍️ 개선된 처리방침</button>
+      <button role="tab" data-tab="compare">📑 신구대조표</button>
+      <button role="tab" data-tab="audience">👨‍👩‍👧 계층별 처리방침</button>
+      <button role="tab" data-tab="raw">🔒 원문(비식별)</button>
+    </nav>
+
+    <div class="panel" data-panel="dash">
+      <div class="kpis" id="kpis"></div>
+      <div class="charts">
+        <figure class="card chart"><figcaption>항목 상태 분포</figcaption><div class="cv"><canvas id="cStatus"></canvas></div><div class="legend" id="lgStatus"></div></figure>
+        <figure class="card chart"><figcaption>영역별 충족률(%)</figcaption><div class="cv"><canvas id="cRadar"></canvas></div></figure>
+        <figure class="card chart wide"><figcaption>항목별 점수(%) — 색은 상태</figcaption><div class="cv tall"><canvas id="cBar"></canvas></div></figure>
+      </div>
+      <div class="card" id="lawBox"></div>
+    </div>
+
+    <div class="panel" data-panel="report" hidden>
+      <div class="toolbar">
+        <button class="btn primary" id="pdfBtn">⬇ 통합 보고서 PDF</button>
+        <button class="btn primary" id="hwpxBtn">⬇ 한글(HWPX)</button>
+        <button class="btn primary" id="docxBtn">⬇ 워드(DOCX)</button>
+        <button class="btn" id="aiFixBtn" hidden>✨ AI로 개선 문구 다듬기</button>
+        <span class="hint" id="aiFixHint"></span>
+      </div>
+      <article id="report" class="report"></article>
+    </div>
+
+    <div class="panel" data-panel="improved" hidden>
+      <div class="toolbar">
+        <button class="btn primary" id="impPdf">⬇ PDF</button>
+        <button class="btn" id="impHtml">⬇ HTML</button>
+        <button class="btn" id="impCopy">복사</button>
+        <span class="hint">충족 항목은 현행 내용을 유지하고, 미흡·누락 항목은 개선 예시로 보완한 초안입니다. ○○ 표시는 기관이 채워야 합니다.</span>
+      </div>
+      <article id="improved" class="doc"></article>
+    </div>
+
+    <div class="panel" data-panel="compare" hidden>
+      <div class="toolbar">
+        <button class="btn primary" id="cmpPdf">⬇ 신구대조표 PDF(가로)</button>
+        <button class="btn" id="cmpHtml">⬇ HTML</button>
+        <span class="hint">현행 · 개정안 · 비고(사유) 3단 비교표입니다. <b style="color:#1d4ed8">파란 글씨</b>는 새로 넣거나 보완한 부분입니다.</span>
+      </div>
+      <article id="compare" class="cmp-wrap"></article>
+    </div>
+
+    <div class="panel" data-panel="audience" hidden>
+      <div class="aud-pick">
+        <button class="aud-btn" data-aud="child"><span>🧒</span><b>어린이용</b><small>14세 미만</small></button>
+        <button class="aud-btn" data-aud="teen"><span>🧑‍🎓</span><b>청소년용</b><small>15~18세</small></button>
+        <button class="aud-btn" data-aud="senior"><span>👵</span><b>어르신용</b><small>65세 이상 · 큰 글씨</small></button>
+      </div>
+      <div class="toolbar" id="audBar" hidden>
+        <label class="switch"><input type="checkbox" id="audAI"> AI로 더 쉽게 다시 쓰기</label>
+        <button class="btn primary" id="audPdf">⬇ PDF</button>
+        <button class="btn" id="audHtml">⬇ HTML(홈페이지 게시용)</button>
+        <span class="hint" id="audHint"></span>
+      </div>
+      <article id="audOut"></article>
+    </div>
+
+    <div class="panel" data-panel="raw" hidden>
+      <p class="hint">불러온 처리방침 원문입니다. 개인정보(성명·전화·이메일 등)는 *** 로 비식별 처리되었습니다.</p>
+      <pre id="raw" class="raw"></pre>
+    </div>
+  </section>
+</main>
+
+<footer class="foot wrap">
+  <p>기준 자료 <span id="refCount"></span>: <span id="refList"></span> ·
+  <a href="https://www.pipc.go.kr" target="_blank" rel="noopener">개인정보보호위원회</a> ·
+  <a href="https://www.law.go.kr/법령/개인정보보호법" target="_blank" rel="noopener">국가법령정보센터</a> ·
+  <a href="https://www.kisa.or.kr" target="_blank" rel="noopener">KISA</a></p>
+  <p>이 도구의 결과는 자동 점검 결과로 법률 자문이 아닙니다. 최종 판단은 기관의 개인정보 보호책임자가 하십시오. <span id="ruleVer"></span></p>
+</footer>
+
+<!-- [개발보안 API·보안기능-15] 외부 라이브러리는 저장소에 내장하고 무결성(SRI) 검사 후 실행 -->
+<script src="assets/vendor/chart.umd.min.js" integrity="sha384-dug+JxfBvklEQdJ4AYuBBAIScUz0bVN73xpy273gcAwHjb3qI0fXmuYNaNfdyYJG"></script>
+<script src="assets/vendor/html2pdf.bundle.min.js" integrity="sha384-Yv5O+t3uE3hunW8uyrbpPW3iw6/5/Y7HitWJBLgqfMoA36NogMmy+8wWZMpn3HWc"></script>
+<script src="assets/config.js"></script>
+<script src="assets/rules.js"></script>
+<script src="assets/engine.js"></script>
+<script src="assets/labels.js"></script>
+<script src="assets/app.js"></script>
+<script src="assets/audience.js"></script>
+<script src="assets/hwpx-template.js"></script>
+<script src="assets/export.js"></script>
+</body>
+</html>
