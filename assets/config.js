@@ -4,7 +4,7 @@
 window.APP_CONFIG = {
   // ① Cloudflare Worker 주소 (종합 가이드 5~6장). 비워 두면 'API 없이(토큰 0)' 모드로 동작합니다.
   //    예) 'https://privacy-agent.내아이디.workers.dev'
-  WORKER_URL: '',
+  WORKER_URL: 'https://privacy-agent.seowipo-soc.workers.dev/',
 
   // ② Worker가 없을 때 처리방침 페이지를 가져오기 위한 공개 프록시(순서대로 시도)
   PUBLIC_PROXIES: [
